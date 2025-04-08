@@ -1,5 +1,7 @@
 import typing
 import warnings
+warnings.filterwarnings('ignore',
+    '.*Sparse CSR tensor support is in beta state.*')
 from typing import Any, List, Optional, Tuple, Union
 
 import torch

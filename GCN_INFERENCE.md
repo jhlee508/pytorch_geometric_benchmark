@@ -18,5 +18,8 @@ pip install pyg-lib torch_scatter torch_sparse torch_cluster torch_spline_conv -
 ## Run Benchmark (GCN Inference)
 
 ```bash
+cd benchmark
+pip install -e .
+
 bash gcn_inference.sh
 ```

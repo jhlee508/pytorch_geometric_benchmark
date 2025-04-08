@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 import torch_geometric.transforms as T
 from torch_geometric.data import HeteroData
-from torch_geometric.datasets import OGB_MAG, Reddit
+from torch_geometric.datasets import OGB_MAG, Reddit, Planetoid, NELL, Yelp, AmazonProducts
 from torch_geometric.nn import GAT, GCN, PNA, EdgeCNN, GraphSAGE
 from torch_geometric.utils import index_to_mask
 
@@ -56,9 +56,28 @@ def get_dataset_with_transformation(name, root, use_sparse_tensor=False,
 
         dataset = PygNodePropPredDataset('ogbn-products', root=path,
                                          transform=transform)
+    elif name == 'ogbn-papers100M':
+        if transform is None:
+            transform = T.ToUndirected(merge=True)
+        else:
+            transform = T.Compose([T.ToUndirected(merge=True), transform])
+        dataset = PygNodePropPredDataset('ogbn-papers100M', root=path,
+                                         transform=transform)
 
     elif name == 'Reddit':
         dataset = Reddit(root=path, transform=transform)
+    elif name == 'Cora':
+        dataset = Planetoid(root=path, name='Cora', transform=transform)
+    elif name == 'CiteSeer':
+        dataset = Planetoid(root=path, name='CiteSeer', transform=transform)
+    elif name == 'PubMed':
+        dataset = Planetoid(root=path, name='PubMed', transform=transform)
+    elif name == 'NELL':
+        dataset = NELL(root=path, transform=transform)
+    elif name == 'Yelp':
+        dataset = Yelp(root=path, transform=transform)
+    elif name == 'Amazon':
+        dataset = AmazonProducts(root=path, transform=transform)
 
     data = dataset[0]
 

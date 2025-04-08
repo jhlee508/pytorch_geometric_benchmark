@@ -25,9 +25,16 @@ from torch_geometric.profile import (
 )
 
 supported_sets = {
-    'ogbn-mag': ['rgat', 'rgcn'],
-    'ogbn-products': ['edge_cnn', 'gat', 'gcn', 'pna', 'sage'],
+    'Cora': ['gcn'],
+    'CiteSeer': ['gcn'],
+    'PubMed': ['gcn'],
+    'NELL': ['gcn'],
     'Reddit': ['edge_cnn', 'gat', 'gcn', 'pna', 'sage'],
+    'Yelp': ['gcn'],
+    'Amazon': ['gcn'],
+    'ogbn-products': ['edge_cnn', 'gat', 'gcn', 'pna', 'sage'],
+    'ogbn-papers100M': ['gcn'],
+    'ogbn-mag': ['rgat', 'rgcn'],
 }
 
 
@@ -58,8 +65,8 @@ def run(args: argparse.ArgumentParser):
             or (args.device == 'xpu' and not torch.xpu.is_available())):
         raise RuntimeError(f'{args.device.upper()} is not available')
 
-    if args.device == 'cuda' and args.full_batch:
-        raise RuntimeError('CUDA device is not suitable for full batch mode')
+    # if args.device == 'cuda' and args.full_batch:
+    #     raise RuntimeError('CUDA device is not suitable for full batch mode')
 
     device = torch.device(args.device)
 
@@ -69,8 +76,15 @@ def run(args: argparse.ArgumentParser):
         assert dataset_name in supported_sets.keys(
         ), f"Dataset {dataset_name} isn't supported."
         print(f'Dataset: {dataset_name}')
-        load_time = timeit() if args.measure_load_time else nullcontext()
-        with load_time:
+        if args.measure_load_time:
+            with timeit() as lt:
+                result = get_dataset_with_transformation(dataset_name, args.root,
+                                                        args.use_sparse_tensor,
+                                                        args.bf16)
+                dataset, num_classes, transformation = result
+            load_duration = lt.duration
+            print(f'>> Load time: {load_duration:.6f} sec')
+        else:
             result = get_dataset_with_transformation(dataset_name, args.root,
                                                      args.use_sparse_tensor,
                                                      args.bf16)
@@ -92,7 +106,7 @@ def run(args: argparse.ArgumentParser):
         elif args.device == 'xpu':
             amp = torch.xpu.amp.autocast(enabled=False)
         else:
-            amp = torch.cpu.amp.autocast(enabled=args.bf16)
+            amp = torch.amp.autocast(enabled=args.bf16)
 
         if args.device == 'xpu' and args.warmup < 1:
             print('XPU device requires warmup - setting warmup=1')
@@ -138,6 +152,7 @@ def run(args: argparse.ArgumentParser):
                             sampler=None,
                             **kwargs,
                         )
+                # print(f'> Number of iterations: {len(subgraph_loader)}')
 
                 for layers in args.num_layers:
                     num_neighbors = [args.hetero_num_neighbors] * layers
@@ -161,10 +176,12 @@ def run(args: argparse.ArgumentParser):
 
                     for hidden_channels in args.num_hidden_channels:
                         print('----------------------------------------------')
+                        print("> ", end='')
                         print(f'Batch size={batch_size}, '
                               f'Layers amount={layers}, '
                               f'Num_neighbors={num_neighbors}, '
-                              f'Hidden features size={hidden_channels}, '
+                              f'Hidden channel size={hidden_channels}, '
+                              f'Feature size={inputs_channels}, '
                               f'Sparse tensor={args.use_sparse_tensor}')
                         params = {
                             'inputs_channels': inputs_channels,
@@ -270,6 +287,13 @@ def run(args: argparse.ArgumentParser):
                         latency = total_time / total_num_samples * 1000
                         print(f'Throughput: {throughput:.3f} samples/s')
                         print(f'Latency: {latency:.3f} ms')
+                        if args.full_batch:
+                            print(f">> [Full-neighbor] Total inference time = {total_time:.6f} sec")
+                            print(f">> [Full-neighbor] Total elapsed time = {total_time + load_duration:.6f} sec")
+                        else:
+                            print(f">> [Mini-neighbor] Total inference time = {total_time:.6f} sec")
+                            print(f">> [Mini-neighbor] Total elapsed time = {total_time + load_duration:.6f} sec")
+
 
                         num_records = 1
                         if args.write_csv == 'prof':
