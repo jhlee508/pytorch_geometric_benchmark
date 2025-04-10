@@ -35,6 +35,9 @@ supported_sets = {
     'ogbn-products': ['edge_cnn', 'gat', 'gcn', 'pna', 'sage'],
     'ogbn-papers100M': ['gcn'],
     'ogbn-mag': ['rgat', 'rgcn'],
+    'wikipedia-20070206': ['gcn'],
+    'twitter7': ['gcn'],
+    'arc130': ['gcn'],
 }
 
 
@@ -92,7 +95,7 @@ def run(args: argparse.ArgumentParser):
         data = dataset.to(device)
         hetero = True if dataset_name == 'ogbn-mag' else False
         mask = ('paper', None) if dataset_name == 'ogbn-mag' else None
-        _, _, test_mask = get_split_masks(data, dataset_name)
+        # _, _, test_mask = get_split_masks(data, dataset_name) # No need for only inference w/o evaluation
         degree = None
 
         if hetero and args.cached_loader:
@@ -288,11 +291,11 @@ def run(args: argparse.ArgumentParser):
                         print(f'Throughput: {throughput:.3f} samples/s')
                         print(f'Latency: {latency:.3f} ms')
                         if args.full_batch:
-                            print(f">> [Full-neighbor] Total inference time = {total_time:.6f} sec")
-                            print(f">> [Full-neighbor] Total elapsed time = {total_time + load_duration:.6f} sec")
+                            # print(f">> [Full-neighbor] Total inference time = {total_time:.6f} sec")
+                            print(f">> [Full-neighbor] Total inference time = {total_time + load_duration:.6f} sec")
                         else:
-                            print(f">> [Mini-neighbor] Total inference time = {total_time:.6f} sec")
-                            print(f">> [Mini-neighbor] Total elapsed time = {total_time + load_duration:.6f} sec")
+                            # print(f">> [Mini-neighbor] Total inference time = {total_time:.6f} sec")
+                            print(f">> [Mini-neighbor] Total inference time = {total_time + load_duration:.6f} sec")
 
 
                         num_records = 1
@@ -344,7 +347,7 @@ if __name__ == '__main__':
     add('--num-workers', default=0, type=int)
     add('--num-steps', default=-1, type=int,
         help='number of steps, -1 means iterating through all the data')
-    add('--warmup', default=1, type=int)
+    add('--warmup', default=0, type=int)
     add('--profile', action='store_true')
     add('--vtune-profile', action='store_true')
     add('--bf16', action='store_true')

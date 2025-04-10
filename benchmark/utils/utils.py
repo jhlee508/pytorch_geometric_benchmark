@@ -9,6 +9,7 @@ from tqdm import tqdm
 import torch_geometric.transforms as T
 from torch_geometric.data import HeteroData
 from torch_geometric.datasets import OGB_MAG, Reddit, Planetoid, NELL, Yelp, AmazonProducts
+from torch_geometric.datasets import SuiteSparseMatrixCollection
 from torch_geometric.nn import GAT, GCN, PNA, EdgeCNN, GraphSAGE
 from torch_geometric.utils import index_to_mask
 
@@ -53,7 +54,6 @@ def get_dataset_with_transformation(name, root, use_sparse_tensor=False,
             transform = T.RemoveDuplicatedEdges()
         else:
             transform = T.Compose([T.RemoveDuplicatedEdges(), transform])
-
         dataset = PygNodePropPredDataset('ogbn-products', root=path,
                                          transform=transform)
     elif name == 'ogbn-papers100M':
@@ -79,7 +79,19 @@ def get_dataset_with_transformation(name, root, use_sparse_tensor=False,
     elif name == 'Amazon':
         dataset = AmazonProducts(root=path, transform=transform)
 
+    elif name == 'arc130':
+        transform = T.Compose([T.RemoveDuplicatedEdges()])
+        dataset = SuiteSparseMatrixCollection(root=path, group='HB', name='arc130', transform=transform)
+    elif name == 'wikipedia-20070206':
+        transform = T.Compose([T.RemoveDuplicatedEdges()])
+        dataset = SuiteSparseMatrixCollection(root=path, group='Gleich', name='wikipedia-20070206', transform=transform)
+    elif name == 'twitter7':
+        transform = T.Compose([T.RemoveDuplicatedEdges()])
+        dataset = SuiteSparseMatrixCollection(root=path, group='SNAP', name='twitter7', transform=transform)
+
     data = dataset[0]
+    if data.x == None:
+        data.x = torch.randn((data.num_nodes, 256))
 
     if name == 'ogbn-products':
         split_idx = dataset.get_idx_split()

@@ -66,10 +66,35 @@ class SuiteSparseMatrixCollection(InMemoryDataset):
         fs.cp(self.url.format(self.group, self.name), self.raw_dir)
 
     def process(self) -> None:
-        from scipy.io import loadmat
+        try:
+            from scipy.io import loadmat
+            with fsspec.open(self.raw_paths[0], 'rb') as f:
+                mat = loadmat(f)['Problem'][0][0][2].tocsr().tocoo()
+            print("Successfully loaded matrix using loadmat.")
+        except NotImplementedError as e:
+            print("NotImplementedError occurred, attempting to load using h5py.")
+            import h5py
+            import numpy as np
+            import scipy.sparse as sp
 
-        with fsspec.open(self.raw_paths[0], 'rb') as f:
-            mat = loadmat(f)['Problem'][0][0][2].tocsr().tocoo()
+            with h5py.File(self.raw_paths[0], 'r') as f:
+                problem_group = f['Problem']
+                
+                A_group = problem_group['A']
+                
+                data = np.array(A_group['data'])
+                indices = np.array(A_group['ir'])
+                indptr = np.array(A_group['jc'])
+                
+                n_cols = int(indptr.shape[0]) - 1
+                n_rows = int(np.max(indices)) + 1 if indices.size > 0 else 0
+                shape = (n_rows, n_cols)
+                
+                sparse_matrix = sp.csr_matrix((data, indices, indptr), shape=shape)
+                sparse_matrix = sparse_matrix.tocoo()
+            print("Successfully loaded matrix using h5py.")
+            
+            mat = sparse_matrix
 
         row = torch.from_numpy(mat.row).to(torch.long)
         col = torch.from_numpy(mat.col).to(torch.long)
