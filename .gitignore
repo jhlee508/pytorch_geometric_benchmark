@@ -31,3 +31,6 @@ benchmark/results/
 
 !torch_geometric/data/
 !test/data/
+
+*.log
+*.json
