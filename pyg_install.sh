@@ -11,6 +11,8 @@ pip3 install torch==2.5.0 torchvision==0.20.0 torchaudio==2.5.0 --index-url http
 pip3 install torch_geometric==2.5.0
 pip3 install pyg-lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.5.0+cu124.html
 
+pip install ogb
+
 pip3 install xxhash
 
 echo "PyTorch and PyG installed successfully."
