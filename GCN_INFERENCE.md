@@ -13,6 +13,10 @@ pip install torch==2.5.0 torchvision==0.20.0 torchaudio==2.5.0 --index-url https
 # Install PyG (torch_geometric) and additional libraries
 pip install torch_geometric
 pip install pyg-lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.5.0+cu124.html
+
+# Install OGB and additional libraries
+pip install ogb
+pip3 install xxhash
 ```
 
 ## Run Benchmark (GCN Inference)
